@@ -29,8 +29,7 @@ AS
     CLOSE FKCursor
     DEALLOCATE FKCursor;
 
-
-GO;
+;
 
 CREATE PROCEDURE EliminarEsquemaUnix
 AS

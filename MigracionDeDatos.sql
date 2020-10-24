@@ -54,10 +54,108 @@ WHERE TIPO_AUTO_CODIGO IS NOT NULL AND TIPO_CAJA_CODIGO IS NOT NULL AND TIPO_MOT
 
 SELECT* FROM UNIX.Fabricante
 
-FROM gd_esquema.Maestra;
+INSERT INTO UNIX.Automovil (MODELO_CODIGO, AUTO_CANT_KMS, AUTO_NRO_CHASIS, AUTO_FECHA_ALTA, AUTO_NRO_MOTOR, AUTO_PATENTE, SUCURSAL_CODIGO)
+SELECT MODELO_CODIGO, AUTO_CANT_KMS, AUTO_NRO_CHASIS, AUTO_FECHA_ALTA, AUTO_NRO_MOTOR, AUTO_PATENTE, M.SUCURSAL_CODIGO
+FROM gd_esquema.Maestra A
+INNER JOIN UNIX.Sucursal M ON A.SUCURSAL_DIRECCION = M.SUCURSAL_DIRECCION
+WHERE AUTO_NRO_CHASIS IS NOT NULL;
 
+INSERT INTO UNIX.AutoParte (AUTO_PARTE_CODIGO, AUTO_PARTE_DESCRIPCION, FABRICANTE_CODIGO, MODELO_CODIGO, AUTO_PARTE_PRECIO)
+SELECT DISTINCT AUTO_PARTE_CODIGO, AUTO_PARTE_DESCRIPCION, FABRICANTE_CODIGO, MODELO_CODIGO, COMPRA_PRECIO
+FROM gd_esquema.Maestra M
+INNER JOIN UNIX.Fabricante F ON M.FABRICANTE_NOMBRE = F.FABRICANTE_NOMBRE
+WHERE AUTO_PATENTE IS NULL AND AUTO_PARTE_CODIGO IS NOT NULL AND COMPRA_PRECIO IS NOT NULL;
 
+INSERT INTO UNIX.Compra (COMPRA_NRO,CLIENTE_CODIGO, SUCURSAL_CODIGO, COMPRA_FECHA, PRECIO_TOTAL)
+SELECT DISTINCT COMPRA_NRO,CLIENTE_CODIGO, SUCURSAL_CODIGO, COMPRA_FECHA, COMPRA_PRECIO
+FROM gd_esquema.Maestra M
+INNER JOIN UNIX.Sucursal S ON S.SUCURSAL_DIRECCION = M.SUCURSAL_DIRECCION
+INNER JOIN UNIX.Cliente Cl ON (Cl.CLIENTE_DNI = M.CLIENTE_DNI and
+Cl.CLIENTE_APELLIDO= M.CLIENTE_APELLIDO and
+Cl.CLIENTE_NOMBRE= M.CLIENTE_NOMBRE) or (Cl.CLIENTE_DNI = M.FAC_CLIENTE_DNI and
+Cl.CLIENTE_APELLIDO= M.FAC_CLIENTE_APELLIDO and
+Cl.CLIENTE_NOMBRE= M.FAC_CLIENTE_NOMBRE)
+WHERE COMPRA_NRO IS NOT NULL
 
+INSERT INTO UNIX.Compra (COMPRA_NRO,CLIENTE_CODIGO, SUCURSAL_CODIGO, COMPRA_FECHA, PRECIO_TOTAL)
+SELECT COMPRA_NRO,Cl.CLIENTE_CODIGO, S.SUCURSAL_CODIGO, COMPRA_FECHA, COMPRA_PRECIO
+FROM
+	(SELECT Distinct COMPRA_NRO, CLIENTE_DNI,CLIENTE_NOMBRE, CLIENTE_APELLIDO,SUCURSAL_DIRECCION, COMPRA_FECHA, COMPRA_PRECIO
+	FROM  gd_esquema.Maestra M 
+	WHERE COMPRA_NRO IS NOT NULL and CLIENTE_DNI IS NOT NULL) AS T
+INNER JOIN UNIX.Sucursal S ON S.SUCURSAL_DIRECCION = T.SUCURSAL_DIRECCION
+INNER JOIN UNIX.Cliente Cl ON (Cl.CLIENTE_DNI = T.CLIENTE_DNI and
+Cl.CLIENTE_APELLIDO= T.CLIENTE_APELLIDO and
+Cl.CLIENTE_NOMBRE= T.CLIENTE_NOMBRE)
+
+/*
+create trigger Tr_temaA
+on items
+instead of insert
+AS
+BEGIN
+	declare @stock_num smallint, @order_num smallint, @item_num smallint,
+	@quantity smallint
+	declare @unit_price decimal(8,2)
+	declare @manu_code char(3),@state char(2)
+	declare c_items cursor for select i.item_num, i.order_num, stock_num,
+	manu_code, quantity, unit_price, state
+	from inserted i JOIN orders o
+	ON (i.order_num=o.order_num)
+	JOIN customer c
+	ON (o.customer_num=c.customer_num);
+	open c_items
+	fetch from c_items
+	into @item_num,@order_num,@stock_num,@manu_code,
+	@quantity, @unit_price, @state
+	while @@fetch_status=0
+	BEGIN
+		if @state='CA'
+		begin
+		if (select COUNT(*) FROM items where order_num=@order_num) < 5
+		begin
+		INSERT INTO items (i.item_num, i.order_num, stock_num,
+		manu_code, quantity, unit_price)
+		VALUES(@item_num,@order_num,@stock_num,@manu_code,
+		@quantity,@unit_price)
+		end
+		else
+		begin
+		INSERT INTO items_error
+		VALUES(@item_num, @order_num, @stock_num,
+		@manu_code, @quantity, @unit_price,
+		getDate())
+	end
+	end
+	else
+	begin
+	INSERT INTO items VALUES(@item_num, @order_num, @stock_num,
+	@manu_code, @quantity, @unit_price)
+	end
+
+	fetch from c_items into @item_num, @order_num, @stock_num,
+	@manu_code, @quantity, @unit_price, @state;
+	END
+	close c_items
+	deallocate c_items
+END
+*/
+
+INSERT INTO UNIX.CompraAutomovil (COMPRA_NRO, AUTOMOVIL_CODIGO, COMPRA_PRECIO)
+SELECT DISTINCT COMPRA_NRO, A.AUTOMOVIL_CODIGO, COMPRA_PRECIO
+FROM gd_esquema.Maestra M
+INNER JOIN UNIX.Automovil A 
+ON M.AUTO_NRO_MOTOR = A.AUTO_NRO_MOTOR AND M.AUTO_NRO_CHASIS = A.AUTO_NRO_CHASIS
+WHERE M.AUTO_PATENTE IS NOT NULL and M.AUTO_PARTE_CODIGO IS NULL;
+
+INSERT INTO UNIX.CompraAutomovil (COMPRA_NRO, AUTOMOVIL_CODIGO, COMPRA_PRECIO)
+SELECT DISTINCT COMPRA_NRO, A.AUTOMOVIL_CODIGO, COMPRA_PRECIO
+FROM gd_esquema.Maestra M
+INNER JOIN UNIX.Automovil A ON M.AUTO_NRO_MOTOR = A.AUTO_NRO_MOTOR AND M.AUTO_NRO_CHASIS = A.AUTO_NRO_CHASIS
+WHERE M.AUTO_PATENTE IS NOT NULL and M.AUTO_PARTE_CODIGO IS NULL;
+
+SELECT TOP 100 * FROM UNIX.Automovil ;
+------------------------------------------------------------------------------------
 IF(OBJECT_ID('UNIX.Migrador_Fabricante') IS NOT NULL)
 	DROP PROCEDURE UNIX.Migrador_Fabricante
 
