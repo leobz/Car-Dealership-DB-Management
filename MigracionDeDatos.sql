@@ -117,7 +117,7 @@ FROM (
 		AUTO_PATENTE IS NOT NULL) AS M
 LEFT JOIN UNIX.Automovil A ON (M.AUTO_PATENTE = A.AUTO_PATENTE);
 
-
+--No funciona porque hay que cambiae en la creacion las primary key y que sea una artificial, no compuesta
 SELECT * FROM UNIX.ItemAutoparte
 
 INSERT INTO UNIX.ItemAutoparte
