@@ -7,7 +7,6 @@ COMMIT
 
 -- CREACION DE TABLAS --
 
-BEGIN TRANSACTION
 CREATE TRIGGER tipoCompra
 on UNIX.Compra
 instead of insert
@@ -50,6 +49,6 @@ BEGIN
 	END
 	close c_compras
 	deallocate c_compras
-END
+END;
 
-COMMIT
+DROP Trigger tipoCompra
