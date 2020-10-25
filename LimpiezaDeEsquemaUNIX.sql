@@ -55,3 +55,11 @@ AS
 
 EXEC EliminarFKs;
 EXEC EliminarEsquemaUnix;
+
+
+
+ALTER TABLE UNIX.Autoparte
+DROP CONSTRAINT FK_Autop_Modelo
+
+DROP TABLE UNIX.Autoparte
+DROP TABLE UNIX.Compra
