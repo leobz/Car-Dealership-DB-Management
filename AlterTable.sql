@@ -4,7 +4,9 @@ USE [GD2C2020]
 
 -- Tabla Compra
 
-Begin Transaction
+BEGIN TRANSACTION
+
+--- Compras de Automoviles
 
 ALTER TABLE UNIX.Compra
 ADD CONSTRAINT FK_CompraCliente 
@@ -85,8 +87,6 @@ ALTER TABLE UNIX.ItemAutoparte
 ADD CONSTRAINT FK_Item_Autop
 FOREIGN KEY (AUTO_PARTE_CODIGO) REFERENCES UNIX.Autoparte(AUTO_PARTE_CODIGO);
 
-
-
 --Tabla ItemAutomovil
 
 ALTER TABLE UNIX.ItemAutomovil
@@ -111,4 +111,4 @@ ALTER TABLE UNIX.Factura
 ADD CONSTRAINT FK_Factura_Sucursal
 FOREIGN KEY (SUCURSAL_CODIGO) REFERENCES UNIX.Sucursal(SUCURSAL_CODIGO);
 
-Commit
+COMMIT
