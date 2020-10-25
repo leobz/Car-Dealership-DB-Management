@@ -38,9 +38,6 @@ INSERT INTO UNIX.Fabricante (FABRICANTE_NOMBRE)
 SELECT DISTINCT FABRICANTE_NOMBRE
 FROM gd_esquema.Maestra;
 
-SELECT * FROM UNIX.Sucursal
-SELECT * FROM UNIX.Fabricante
-
 INSERT INTO UNIX.Sucursal (SUCURSAL_DIRECCION, SUCURSAL_MAIL,SUCURSAL_TELEFONO, SUCURSAL_CIUDAD)
 SELECT DISTINCT SUCURSAL_DIRECCION, SUCURSAL_MAIL,SUCURSAL_TELEFONO, SUCURSAL_CIUDAD
 FROM gd_esquema.Maestra
@@ -52,7 +49,6 @@ FROM gd_esquema.Maestra M
 INNER JOIN UNIX.Fabricante F ON M.FABRICANTE_NOMBRE = F.FABRICANTE_NOMBRE
 WHERE TIPO_AUTO_CODIGO IS NOT NULL AND TIPO_CAJA_CODIGO IS NOT NULL AND TIPO_MOTOR_CODIGO IS NOT NULL AND TIPO_TRANSMISION_CODIGO IS NOT NULL;
 
-SELECT* FROM UNIX.Fabricante
 
 INSERT INTO UNIX.Automovil (MODELO_CODIGO, AUTO_CANT_KMS, AUTO_NRO_CHASIS, AUTO_FECHA_ALTA, AUTO_NRO_MOTOR, AUTO_PATENTE, SUCURSAL_CODIGO)
 SELECT MODELO_CODIGO, AUTO_CANT_KMS, AUTO_NRO_CHASIS, AUTO_FECHA_ALTA, AUTO_NRO_MOTOR, AUTO_PATENTE, M.SUCURSAL_CODIGO
@@ -66,6 +62,7 @@ FROM gd_esquema.Maestra M
 INNER JOIN UNIX.Fabricante F ON M.FABRICANTE_NOMBRE = F.FABRICANTE_NOMBRE
 WHERE AUTO_PATENTE IS NULL AND AUTO_PARTE_CODIGO IS NOT NULL AND COMPRA_PRECIO IS NOT NULL;
 
+/*
 INSERT INTO UNIX.Compra (COMPRA_NRO,CLIENTE_CODIGO, SUCURSAL_CODIGO, COMPRA_FECHA, PRECIO_TOTAL)
 SELECT DISTINCT COMPRA_NRO,CLIENTE_CODIGO, SUCURSAL_CODIGO, COMPRA_FECHA, COMPRA_PRECIO
 FROM gd_esquema.Maestra M
@@ -75,27 +72,24 @@ Cl.CLIENTE_APELLIDO= M.CLIENTE_APELLIDO and
 Cl.CLIENTE_NOMBRE= M.CLIENTE_NOMBRE) or (Cl.CLIENTE_DNI = M.FAC_CLIENTE_DNI and
 Cl.CLIENTE_APELLIDO= M.FAC_CLIENTE_APELLIDO and
 Cl.CLIENTE_NOMBRE= M.FAC_CLIENTE_NOMBRE)
-WHERE COMPRA_NRO IS NOT NULL
-
-SELECT * FROM UNIX.Compra
+WHERE COMPRA_NRO IS NOT NULL*/
 
 INSERT INTO UNIX.Compra (COMPRA_NRO,CLIENTE_CODIGO, SUCURSAL_CODIGO, COMPRA_FECHA, PRECIO_TOTAL)
-SELECT COMPRA_NRO,Cl.CLIENTE_CODIGO, S.SUCURSAL_CODIGO, COMPRA_FECHA, COMPRA_PRECIO
+SELECT COMPRA_NRO,Cl.CLIENTE_CODIGO, S.SUCURSAL_CODIGO, COMPRA_FECHA, SUM(COMPRA_PRECIO*COMPRA_CANT)
 FROM
-	(SELECT Distinct COMPRA_NRO, CLIENTE_DNI,CLIENTE_NOMBRE, CLIENTE_APELLIDO,SUCURSAL_DIRECCION, COMPRA_FECHA, COMPRA_PRECIO
+	(SELECT DISTINCT COMPRA_NRO, CLIENTE_DNI,CLIENTE_NOMBRE, CLIENTE_APELLIDO,SUCURSAL_DIRECCION, COMPRA_FECHA, COMPRA_PRECIO, COMPRA_CANT
 	FROM  gd_esquema.Maestra M 
-	WHERE COMPRA_NRO IS NOT NULL and CLIENTE_DNI IS NOT NULL) AS T
+	WHERE COMPRA_NRO IS NOT NULL and CLIENTE_DNI IS NOT NULL and AUTO_PARTE_CODIGO IS NOT NULL) AS T
 INNER JOIN UNIX.Sucursal S ON S.SUCURSAL_DIRECCION = T.SUCURSAL_DIRECCION
 INNER JOIN UNIX.Cliente Cl ON (Cl.CLIENTE_DNI = T.CLIENTE_DNI and
 Cl.CLIENTE_APELLIDO= T.CLIENTE_APELLIDO and
 Cl.CLIENTE_NOMBRE= T.CLIENTE_NOMBRE)
+GROUP BY COMPRA_NRO, CLIENTE_CODIGO, SUCURSAL_CODIGO, COMPRA_FECHA
 ORDER BY COMPRA_NRO
 
-Select TOP 200 * FROM gd_esquema.Maestra
-WHERE COMPRA_NRO IS NOT NULL
-ORDER BY COMPRA_NRO 
+SELECT * FROM UNIX.Compra
 
-create trigger tipoCompra
+CREATE TRIGGER tipoCompra
 on UNIX.Compra
 instead of insert
 AS
@@ -104,11 +98,12 @@ BEGIN
 	@compra_fecha datetime2(3), @precio_total decimal(18,2), @auto_parte_codigo decimal(18,0)
 	
 	declare c_compras cursor for select i.COMPRA_NRO,CLIENTE_CODIGO,
-	SUCURSAL_CODIGO, COMPRA_FECHA, PRECIO_TOTAL, AUTO_PARTE_CODIGO
+	SUCURSAL_CODIGO, COMPRA_FECHA, PRECIO_TOTAL, T.AUTO_PARTE_CODIGO
 	from inserted i JOIN (SELECT DISTINCT COMPRA_NRO, AUTO_PARTE_CODIGO
 	FROM  gd_esquema.Maestra M 
 	WHERE COMPRA_NRO IS NOT NULL) AS T
 	ON (i.COMPRA_NRO=T.COMPRA_NRO)
+	
 	open c_compras
 	fetch from c_compras
 	into @compra_num, @cliente_codigo, @sucursal_codigo,
@@ -117,26 +112,26 @@ BEGIN
 	while @@fetch_status=0
 	BEGIN
 		if @auto_parte_codigo IS NULL
-		begin
-		INSERT INTO UNIX.Compra(COMPRA_NRO,CLIENTE_CODIGO, SUCURSAL_CODIGO, COMPRA_FECHA, TIPO_COMPRA, PRECIO_TOTAL)
-		VALUES(@compra_num, @cliente_codigo, @sucursal_codigo,
-	    @compra_fecha,'automovil', @precio_total)
-		end
+			begin
+			INSERT INTO UNIX.Compra(COMPRA_NRO,CLIENTE_CODIGO, SUCURSAL_CODIGO,
+			COMPRA_FECHA, TIPO_COMPRA, PRECIO_TOTAL)
+			VALUES(@compra_num, @cliente_codigo, @sucursal_codigo,
+			@compra_fecha,'automovil', @precio_total)
+			end
 		else
-		begin
-		INSERT INTO UNIX.Compra(COMPRA_NRO,CLIENTE_CODIGO, SUCURSAL_CODIGO, COMPRA_FECHA, TIPO_COMPRA, PRECIO_TOTAL)
-		VALUES(@compra_num, @cliente_codigo, @sucursal_codigo,
-	    @compra_fecha,'autoparte', @precio_total)
-		end
-	END
+			begin
+			INSERT INTO UNIX.Compra(COMPRA_NRO,CLIENTE_CODIGO, SUCURSAL_CODIGO, 
+			COMPRA_FECHA, TIPO_COMPRA, PRECIO_TOTAL)
+			VALUES(@compra_num, @cliente_codigo, @sucursal_codigo,
+			@compra_fecha,'autoparte', @precio_total)
+			end
+
 	fetch from c_compras into @compra_num, @cliente_codigo, @sucursal_codigo,
 	@compra_fecha, @precio_total, @auto_parte_codigo
 	END
 	close c_compras
 	deallocate c_compras
 END
-
-Select * from items
 
 
 create trigger Tr_temaA
@@ -162,26 +157,26 @@ BEGIN
 	BEGIN
 		if @state='CA'
 		begin
-		if (select COUNT(*) FROM items where order_num=@order_num) < 5
-		begin
-		INSERT INTO items (i.item_num, i.order_num, stock_num,
-		manu_code, quantity, unit_price)
-		VALUES(@item_num,@order_num,@stock_num,@manu_code,
-		@quantity,@unit_price)
+			if (select COUNT(*) FROM items where order_num=@order_num) < 5
+			begin
+				INSERT INTO items (i.item_num, i.order_num, stock_num,
+				manu_code, quantity, unit_price)
+				VALUES(@item_num,@order_num,@stock_num,@manu_code,
+				@quantity,@unit_price)
+			end
+			else
+			begin
+				INSERT INTO items_error
+				VALUES(@item_num, @order_num, @stock_num,
+				@manu_code, @quantity, @unit_price,
+				getDate())
+			end
 		end
 		else
-		begin
-		INSERT INTO items_error
-		VALUES(@item_num, @order_num, @stock_num,
-		@manu_code, @quantity, @unit_price,
-		getDate())
-	end
-	end
-	else
-	begin
-	INSERT INTO items VALUES(@item_num, @order_num, @stock_num,
-	@manu_code, @quantity, @unit_price)
-	end
+			begin
+			INSERT INTO items VALUES(@item_num, @order_num, @stock_num,
+			@manu_code, @quantity, @unit_price)
+			end
 
 	fetch from c_items into @item_num, @order_num, @stock_num,
 	@manu_code, @quantity, @unit_price, @state;
