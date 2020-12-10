@@ -57,7 +57,7 @@ DROP TABLE UNIX.TipoAuto
 DROP TABLE UNIX.TipoCaja
 DROP TABLE UNIX.TipoMotor
 DROP TABLE UNIX.TipoTransmision
---DROP SCHEMA UNIX
+DROP SCHEMA UNIX
 GO
 
 -- Ejecucion de Procedures
