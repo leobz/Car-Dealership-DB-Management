@@ -88,18 +88,13 @@ COMMIT TRANSACTION
 
 BEGIN TRANSACTION
 
-INSERT INTO UNIX.BI_HechoSucursal
-(SUCURSAL_CODIGO, TIEMPO_CODIGO, CANTIDAD_AUTOMOVILES_COMPRADOS, CANTIDAD_AUTOMOVILES_VENDIDOS, GANANCIAS_AUTOPARTES,
-GANANCIAS_AUTOMOVIL, PRECIO_PROMEDIO_AUTOMOVILES_VENDIDOS, 
-PRECIO_PROMEDIO_AUTOMOVILES_COMPRADOS)
-SELECT 
-
 
 
 
 ------------------- Tabla intermedia datos automoviles  -------------------
 
 SELECT 
+
   ac.SUCURSAL_CODIGO, ac.anio, ac.mes, cantidad_comprada, 
   promedio_compra, cantidad_vendida, promedio_venta, (precio_vendido - precio_compra) ganancias
 INTO #automoviles
@@ -158,4 +153,32 @@ ON
   )
 ORDER BY SUCURSAL_CODIGO, anio, mes
 
-SELECT * FROM #autopartes
+
+
+SELECT ac.SUCURSAL_CODIGO,ac.AUTO_PARTE_CODIGO, ac.anio, ac.mes, cantidad_total_comprada ,compra_total 
+INTO #autopartescompra
+FROM 
+  (
+  -- AUTOPARTES x MES x SUCURSAL: PRECIO TOTAL COMPRADO
+  SELECT SUCURSAL_CODIGO,AUTO_PARTE_CODIGO, MONTH(COMPRA_FECHA) mes, YEAR(COMPRA_FECHA) anio,
+      SUM(ca.COMPRA_CANT) cantidad_total_comprada ,SUM(PRECIO_TOTAL) compra_total
+  FROM UNIX.COMPRA c
+  JOIN UNIX.CompraPorAutoparte ca ON(c.COMPRA_NRO=ca.COMPRA_NRO)
+  WHERE TIPO_COMPRA = 'AP'
+  GROUP BY SUCURSAL_CODIGO, AUTO_PARTE_CODIGO, MONTH(COMPRA_FECHA),YEAR(COMPRA_FECHA)
+) ac
+
+SELECT ac.SUCURSAL_CODIGO,ac.AUTO_PARTE_CODIGO, ac.anio, ac.mes, cantidad_total_vendida ,venta_total 
+INTO #autopartesventa
+FROM 
+  (
+  -- AUTOPARTES x MES x SUCURSAL: PRECIO TOTAL VENDIDO
+  SELECT SUCURSAL_CODIGO,AUTO_PARTE_CODIGO, MONTH(FACTURA_FECHA) mes, YEAR(FACTURA_FECHA) anio,
+      SUM(ia.FACTURA_CANT) cantidad_total_vendida ,SUM(PRECIO_TOTAL) venta_total
+  FROM UNIX.Factura f
+  JOIN UNIX.ItemAutoparte ia ON(f.FACTURA_NRO=ia.FACTURA_NRO)
+  WHERE TIPO_COMPRA = 'AP'
+  GROUP BY SUCURSAL_CODIGO, AUTO_PARTE_CODIGO, MONTH(COMPRA_FECHA),YEAR(COMPRA_FECHA)
+) ac
+
+select*from UNIX.Factura
