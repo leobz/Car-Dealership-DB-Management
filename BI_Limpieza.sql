@@ -42,6 +42,8 @@ GO
 CREATE PROCEDURE BI_EliminarEsquemaUnix
 AS
 DROP TABLE UNIX.BI_HechoModelo
+DROP TABLE UNIX.BI_HechoAutomovilCompra
+DROP TABLE UNIX.BI_HechoAutomovilVenta
 DROP TABLE UNIX.BI_TipoCaja
 DROP TABLE UNIX.BI_TipoMotor
 DROP TABLE UNIX.BI_Modelo
@@ -49,6 +51,12 @@ DROP TABLE UNIX.BI_Potencia
 DROP TABLE UNIX.BI_Fabricante
 DROP TABLE UNIX.BI_TipoAuto
 DROP TABLE UNIX.BI_TipoTransmision
+DROP TABLE UNIX.BI_Sucursal
+DROP TABLE UNIX.BI_Tiempo
+DROP TABLE UNIX.BI_Edad
+
+
+
 GO
 -- Ejecucion de Procedures
 
