@@ -173,4 +173,108 @@ ORDER BY TIEMPO_CODIGO, SUCURSAL_CODIGO,AUTO_PARTE_CODIGO, CLIENTE_EDAD_CODIGO;
 
 COMMIT TRANSACTION
 
-GO;
+
+---------------------------------------------------------  VISTAS  ------------------------------------------------------
+
+-----------------------------  VISTAS  AUTOMOVIL ------------------------------------------------------
+
+----------  Cantidad de automóviles, vendidos y comprados x sucursal y mes
+GO
+CREATE OR ALTER VIEW UNIX.BI_Vista_Automoviles_Cantidad_Comprados_Vendidos AS
+SELECT
+  COALESCE(ac.TIEMPO_CODIGO, av.TIEMPO_CODIGO) TIEMPO_CODIGO,
+  COALESCE(ac.SUCURSAL_CODIGO, av.SUCURSAL_CODIGO) SUCURSAL_CODIGO,
+  COALESCE(ac.CLIENTE_EDAD_CODIGO, av.CLIENTE_EDAD_CODIGO) CLIENTE_EDAD_CODIGO,
+  COALESCE(CANTIDAD_TOTAL_COMPRADA, 0) CANTIDAD_TOTAL_COMPRADA,
+  COALESCE(CANTIDAD_TOTAL_VENDIDA, 0) CANTIDAD_TOTAL_VENDIDA
+FROM UNIX.BI_HechoAutomovilCompra ac
+FULL OUTER JOIN UNIX.BI_HechoAutomovilVenta av 
+  ON (
+    av.TIEMPO_CODIGO = ac.TIEMPO_CODIGO AND
+    av.SUCURSAL_CODIGO = ac.TIEMPO_CODIGO AND
+    av.CLIENTE_EDAD_CODIGO = ac.CLIENTE_EDAD_CODIGO
+    );
+GO
+
+
+
+
+----------  Ganancias (precio de venta – precio de compra) x Sucursal x mes
+GO
+CREATE OR ALTER VIEW UNIX.BI_Vista_Automoviles_Ganancias AS
+SELECT
+  COALESCE(ac.TIEMPO_CODIGO, av.TIEMPO_CODIGO) TIEMPO_CODIGO,
+  COALESCE(ac.SUCURSAL_CODIGO, av.SUCURSAL_CODIGO) SUCURSAL_CODIGO,
+  COALESCE(ac.CLIENTE_EDAD_CODIGO, av.CLIENTE_EDAD_CODIGO) CLIENTE_EDAD_CODIGO,
+  COALESCE(av.VENTA_TOTAL, 0) - COALESCE(ac.COMPRA_TOTAL, 0) GANANCIAS
+FROM UNIX.BI_HechoAutomovilCompra ac
+FULL OUTER JOIN UNIX.BI_HechoAutomovilVenta av 
+  ON (
+    av.TIEMPO_CODIGO = ac.TIEMPO_CODIGO AND
+    av.SUCURSAL_CODIGO = ac.TIEMPO_CODIGO AND
+    av.CLIENTE_EDAD_CODIGO = ac.CLIENTE_EDAD_CODIGO
+    );
+GO
+
+
+----------  Promedio de tiempo en stock de cada modelo de automóvil.
+GO
+CREATE OR ALTER VIEW UNIX.BI_Vista_Automoviles_Stock AS
+SELECT MODELO_CODIGO, PROMEDIO_TIEMPO_STOCK
+FROM UNIX.BI_HechoModelo
+GO
+
+
+----------  Precio promedio de automóviles, vendidos y comprados.
+GO
+CREATE OR ALTER VIEW UNIX.BI_Vista_Automoviles_Precio_Promedio AS
+SELECT 
+(SELECT SUM(COMPRA_TOTAL) / SUM(CANTIDAD_TOTAL_COMPRADA) FROM UNIX.BI_HechoAutomovilCompra) PRECIO_PROMEDIO_COMPRA,
+(SELECT SUM(VENTA_TOTAL) / SUM(CANTIDAD_TOTAL_VENDIDA) FROM UNIX.BI_HechoAutomovilVenta) PRECIO_PROMEDIO_VENTA
+GO
+
+
+-----------------------------  VISTAS  AUTOPARTE ------------------------------------------------------
+
+----------  Precio promedio de autopartes, vendidas y compradas
+GO
+CREATE OR ALTER VIEW UNIX.BI_Vista_Autopartes_Precio_Promedio AS
+SELECT 
+(SELECT SUM(COMPRA_TOTAL) / SUM(CANTIDAD_TOTAL_COMPRADA) FROM UNIX.BI_HechoAutoparteCompra) PRECIO_PROMEDIO_COMPRA,
+(SELECT SUM(VENTA_TOTAL) / SUM(CANTIDAD_TOTAL_VENDIDA) FROM UNIX.BI_HechoAutoparteVenta) PRECIO_PROMEDIO_VENTA
+GO
+
+----------  Ganancias (precio de venta – precio de compra) x Sucursal x mes
+GO
+CREATE OR ALTER VIEW UNIX.BI_Vista_Autopartes_Ganancias AS
+SELECT
+  COALESCE(ac.TIEMPO_CODIGO, av.TIEMPO_CODIGO) TIEMPO_CODIGO,
+  COALESCE(ac.SUCURSAL_CODIGO, av.SUCURSAL_CODIGO) SUCURSAL_CODIGO,
+  COALESCE(ac.CLIENTE_EDAD_CODIGO, av.CLIENTE_EDAD_CODIGO) CLIENTE_EDAD_CODIGO,
+  SUM(av.VENTAS_TOTALES) - SUM(ac.COMPRAS_TOTALES) GANANCIAS
+FROM 
+  (SELECT TIEMPO_CODIGO, SUCURSAL_CODIGO, CLIENTE_EDAD_CODIGO, SUM(COMPRA_TOTAL) COMPRAS_TOTALES
+  FROM UNIX.BI_HechoAutoparteCompra
+  GROUP BY TIEMPO_CODIGO, SUCURSAL_CODIGO, CLIENTE_EDAD_CODIGO
+  ) ac
+FULL OUTER JOIN
+  (SELECT TIEMPO_CODIGO, SUCURSAL_CODIGO, CLIENTE_EDAD_CODIGO, SUM(VENTA_TOTAL) VENTAS_TOTALES
+  FROM UNIX.BI_HechoAutoparteVenta
+  GROUP BY TIEMPO_CODIGO, SUCURSAL_CODIGO, CLIENTE_EDAD_CODIGO
+  ) av 
+  ON (
+    av.TIEMPO_CODIGO = ac.TIEMPO_CODIGO AND
+    av.SUCURSAL_CODIGO = ac.TIEMPO_CODIGO AND
+    av.CLIENTE_EDAD_CODIGO = ac.CLIENTE_EDAD_CODIGO
+    )
+GO
+
+SELECT * FROM UNIX.BI_HechoAutoparteCompra
+
+SELECT * FROM UNIX.BI_HechoAutoparteCompra
+
+
+SELECT * FROM UNIX.BI_Vista_Automoviles_Cantidad_Comprados_Vendidos
+SELECT * FROM UNIX.BI_Vista_Automoviles_Ganancias
+SELECT * FROM UNIX.BI_Vista_Automoviles_Stock
+SELECT * FROM UNIX.BI_Vista_Automoviles_Precio_Promedio
