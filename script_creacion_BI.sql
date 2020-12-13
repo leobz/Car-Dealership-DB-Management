@@ -443,7 +443,7 @@ BEGIN TRANSACTION
 
 ----------  Cantidad de automóviles, vendidos y comprados x sucursal y mes
 GO
-CREATE OR ALTER VIEW UNIX.BI_Vista_Automoviles_Cantidad_Comprados_Vendidos AS
+CREATE VIEW UNIX.BI_Vista_Automoviles_Cantidad_Comprados_Vendidos AS
 SELECT
   COALESCE(ac.TIEMPO_CODIGO, av.TIEMPO_CODIGO) TIEMPO_CODIGO,
   COALESCE(ac.SUCURSAL_CODIGO, av.SUCURSAL_CODIGO) SUCURSAL_CODIGO,
@@ -461,7 +461,7 @@ GO
 
 ----------  Ganancias (precio de venta – precio de compra) x Sucursal x mes
 GO
-CREATE OR ALTER VIEW UNIX.BI_Vista_Automoviles_Ganancias AS
+CREATE  VIEW UNIX.BI_Vista_Automoviles_Ganancias AS
 SELECT
   COALESCE(ac.TIEMPO_CODIGO, av.TIEMPO_CODIGO) TIEMPO_CODIGO,
   COALESCE(ac.SUCURSAL_CODIGO, av.SUCURSAL_CODIGO) SUCURSAL_CODIGO,
@@ -478,14 +478,14 @@ GO
 
 ----------  Promedio de tiempo en stock de cada modelo de automóvil.
 GO
-CREATE OR ALTER VIEW UNIX.BI_Vista_Automoviles_Stock AS
+CREATE  VIEW UNIX.BI_Vista_Automoviles_Stock AS
 SELECT MODELO_CODIGO, PROMEDIO_TIEMPO_STOCK
 FROM UNIX.BI_HechoModelo
 GO
 
 ----------  Precio promedio de automóviles, vendidos y comprados.
 GO
-CREATE OR ALTER VIEW UNIX.BI_Vista_Automoviles_Precio_Promedio AS
+CREATE  VIEW UNIX.BI_Vista_Automoviles_Precio_Promedio AS
 SELECT 
 (SELECT SUM(COMPRA_TOTAL) / SUM(CANTIDAD_TOTAL_COMPRADA) FROM UNIX.BI_HechoAutomovilCompra) PRECIO_PROMEDIO_COMPRA,
 (SELECT SUM(VENTA_TOTAL) / SUM(CANTIDAD_TOTAL_VENDIDA) FROM UNIX.BI_HechoAutomovilVenta) PRECIO_PROMEDIO_VENTA
@@ -494,7 +494,7 @@ GO
 ------------------------------- AUTOPARTE --------------------------------------------------
 ----------  Precio promedio de autopartes, vendidas y compradas
 GO
-CREATE OR ALTER VIEW UNIX.BI_Vista_Autopartes_Precio_Promedio AS
+CREATE  VIEW UNIX.BI_Vista_Autopartes_Precio_Promedio AS
 SELECT 
 (SELECT SUM(COMPRA_TOTAL) / SUM(CANTIDAD_TOTAL_COMPRADA) FROM UNIX.BI_HechoAutoparteCompra) PRECIO_PROMEDIO_COMPRA,
 (SELECT SUM(VENTA_TOTAL) / SUM(CANTIDAD_TOTAL_VENDIDA) FROM UNIX.BI_HechoAutoparteVenta) PRECIO_PROMEDIO_VENTA
@@ -502,7 +502,7 @@ GO
 
 ----------  Ganancias (precio de venta – precio de compra) x Sucursal x mes
 GO
-CREATE OR ALTER VIEW UNIX.BI_Vista_Autopartes_Ganancias AS
+CREATE VIEW UNIX.BI_Vista_Autopartes_Ganancias AS
 SELECT TIEMPO_CODIGO, SUCURSAL_CODIGO, CLIENTE_EDAD_CODIGO, SUM(VENTA_TOTAL) - SUM(COMPRA_TOTAL) GANANCIAS
 FROM 
 (
@@ -527,7 +527,7 @@ GO
 ----------  Máxima cantidad de stock por cada sucursal (anual)
 
 GO
-CREATE OR ALTER VIEW UNIX.BI_Vista_Autopartes_Stock_mensual_sucursal AS
+CREATE VIEW UNIX.BI_Vista_Autopartes_Stock_mensual_sucursal AS
 SELECT SUCURSAL_CODIGO, ANIO, MES, DIFF_STOCK_COMPRADO,
   CASE TIEMPO_CODIGO
     WHEN 1 THEN
@@ -562,7 +562,7 @@ GROUP BY SUCURSAL_CODIGO, TIEMPO_CODIGO, ANIO, MES, DIFF_STOCK_COMPRADO
 GO
 
 GO
-CREATE OR ALTER VIEW UNIX.BI_Vista_Autopartes_Stock_Max_Anual AS
+CREATE VIEW UNIX.BI_Vista_Autopartes_Stock_Max_Anual AS
 SELECT SUCURSAL_CODIGO, ANIO, MAX(STOCK_ACUMULADO) MAX_STOCK_ACUMULADO, MAX(DIFF_STOCK_COMPRADO) MAX_DIFF_STOCK_COMPRADO_UN_MES
 FROM UNIX.BI_Vista_Autopartes_Stock_mensual_sucursal
 GROUP BY SUCURSAL_CODIGO, ANIO
