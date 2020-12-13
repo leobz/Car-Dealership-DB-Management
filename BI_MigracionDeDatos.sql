@@ -269,9 +269,56 @@ GROUP BY TIEMPO_CODIGO, SUCURSAL_CODIGO, CLIENTE_EDAD_CODIGO
 GO
 
 
+----------  Máxima cantidad de stock por cada sucursal (anual)
+
+GO
+CREATE OR ALTER VIEW UNIX.BI_Vista_Autopartes_Stock_mensual_sucursal AS
+SELECT SUCURSAL_CODIGO, ANIO, MES, DIFF_STOCK_COMPRADO,
+  CASE TIEMPO_CODIGO
+    WHEN 1 THEN
+      DIFF_STOCK_COMPRADO
+    ELSE
+      SUM(SUM(DIFF_STOCK_COMPRADO))
+      OVER (PARTITION BY SUCURSAL_CODIGO ORDER BY SUCURSAL_CODIGO, TIEMPO_CODIGO ASC)
+  END AS STOCK_ACUMULADO
+FROM
+(
+  SELECT SUCURSAL_CODIGO, t.TIEMPO_CODIGO, t.ANIO, t.MES,
+  SUM(CANTIDAD_TOTAL_COMPRADA) - SUM(CANTIDAD_TOTAL_VENDIDA) DIFF_STOCK_COMPRADO
+  FROM
+  (
+    SELECT
+      COALESCE(ac.TIEMPO_CODIGO, av.TIEMPO_CODIGO) TIEMPO_CODIGO,
+      COALESCE(ac.SUCURSAL_CODIGO, av.SUCURSAL_CODIGO) SUCURSAL_CODIGO,
+      COALESCE(av.CANTIDAD_TOTAL_VENDIDA, 0) CANTIDAD_TOTAL_VENDIDA,
+      COALESCE(ac.CANTIDAD_TOTAL_COMPRADA, 0) CANTIDAD_TOTAL_COMPRADA
+    FROM UNIX.BI_HechoAutoparteCompra ac
+    FULL OUTER JOIN UNIX.BI_HechoAutoparteVenta av
+      ON (
+        av.TIEMPO_CODIGO = ac.TIEMPO_CODIGO AND
+        av.SUCURSAL_CODIGO = ac.TIEMPO_CODIGO AND
+        av.AUTO_PARTE_CODIGO = ac.AUTO_PARTE_CODIGO
+        )
+  ) t_comp_vent
+  JOIN UNIX.BI_Tiempo t ON (t.TIEMPO_CODIGO = t_comp_vent.TIEMPO_CODIGO)
+  GROUP BY SUCURSAL_CODIGO, t.TIEMPO_CODIGO, t.ANIO, t.MES
+) autopartes_diff_stocks_mensuales
+GROUP BY SUCURSAL_CODIGO, TIEMPO_CODIGO, ANIO, MES, DIFF_STOCK_COMPRADO
+GO
+
+
+GO
+CREATE OR ALTER VIEW UNIX.BI_Vista_Autopartes_Stock_Max_Anual AS
+SELECT SUCURSAL_CODIGO, ANIO, MAX(STOCK_ACUMULADO) MAX_STOCK_ACUMULADO, MAX(DIFF_STOCK_COMPRADO) MAX_DIFF_STOCK_COMPRADO_UN_MES
+FROM UNIX.BI_Vista_Autopartes_Stock_mensual_sucursal
+GROUP BY SUCURSAL_CODIGO, ANIO
+GO
 
 
 
+---------------------------------------------------------  QUERYS  ------------------------------------------------------
+
+SELECT * FROM UNIX.BI_HechoModelo
 SELECT * FROM UNIX.BI_HechoAutoparteCompra
 SELECT * FROM UNIX.BI_HechoAutoparteVenta
 
@@ -279,5 +326,8 @@ SELECT * FROM UNIX.BI_Vista_Automoviles_Cantidad_Comprados_Vendidos
 SELECT * FROM UNIX.BI_Vista_Automoviles_Ganancias
 SELECT * FROM UNIX.BI_Vista_Automoviles_Stock
 SELECT * FROM UNIX.BI_Vista_Automoviles_Precio_Promedio
-SELECT * FROM UNIX.BI_Vista_Autopartes_Ganancias
 
+SELECT * FROM UNIX.BI_Vista_Autopartes_Precio_Promedio
+SELECT * FROM UNIX.BI_Vista_Autopartes_Ganancias
+SELECT * FROM UNIX.BI_Vista_Autopartes_Stock_mensual_sucursal
+SELECT * FROM UNIX.BI_Vista_Autopartes_Stock_Max_Anual
