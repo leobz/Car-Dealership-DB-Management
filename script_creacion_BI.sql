@@ -338,7 +338,7 @@ GO
 --------------------------- FUNCION CALCULAR RANGO EDAD -----------------------------
 
 
-CREATE OR ALTER FUNCTION CalcularRangoEdad(@FechaNacimiento DATETIME2)
+CREATE FUNCTION CalcularRangoEdad(@FechaNacimiento DATETIME2)
 RETURNS INT
 BEGIN
   DECLARE @Anios INT
@@ -443,7 +443,7 @@ BEGIN TRANSACTION
 
 ----------  Cantidad de automóviles, vendidos y comprados x sucursal y mes
 GO
-CREATE OR ALTER VIEW UNIX.BI_Vista_Automoviles_Cantidad_Comprados_Vendidos AS
+CREATE VIEW UNIX.BI_Vista_Automoviles_Cantidad_Comprados_Vendidos AS
 SELECT
   SUCURSAL_CODIGO,ANIO, MES,
   SUM(CANTIDAD_TOTAL_COMPRADA) CANTIDAD_TOTAL_COMPRADA,
@@ -470,7 +470,7 @@ GO
 
 ----------  Ganancias (precio de venta – precio de compra) x Sucursal x mes
 GO
-CREATE OR ALTER VIEW UNIX.BI_Vista_Automoviles_Ganancias AS
+CREATE  VIEW UNIX.BI_Vista_Automoviles_Ganancias AS
 SELECT
   f.SUCURSAL_CODIGO, YEAR(FACTURA_FECHA) ANIO, MONTH(FACTURA_FECHA) MES,
   SUM(PRECIO_FACTURADO) - SUM(c.PRECIO_TOTAL) GANANCIA
@@ -483,7 +483,7 @@ GO
 
 ----------  Promedio de tiempo en stock de cada modelo de automóvil.
 GO
-CREATE OR ALTER VIEW UNIX.BI_Vista_Automoviles_Stock AS
+CREATE VIEW UNIX.BI_Vista_Automoviles_Stock AS
 SELECT m.MODELO_CODIGO, MODELO_NOMBRE, PROMEDIO_TIEMPO_STOCK
 FROM UNIX.BI_HechoModelo em
 JOIN UNIX.BI_Modelo m ON (m.MODELO_CODIGO = em.MODELO_CODIGO)
@@ -491,7 +491,7 @@ GO
 
 ----------  Precio promedio de automóviles, vendidos y comprados.
 GO
-CREATE OR ALTER VIEW UNIX.BI_Vista_Automoviles_Precio_Promedio AS
+CREATE  VIEW UNIX.BI_Vista_Automoviles_Precio_Promedio AS
 SELECT 
   CAST((SELECT SUM(COMPRA_TOTAL) / SUM(CANTIDAD_TOTAL_COMPRADA) FROM UNIX.BI_HechoAutomovilCompra) AS DECIMAL(18,2))
   PRECIO_PROMEDIO_COMPRA,
@@ -502,7 +502,7 @@ GO
 ------------------------------- AUTOPARTE --------------------------------------------------
 ----------  Precio promedio de autopartes, vendidas y compradas
 GO
-CREATE OR ALTER VIEW UNIX.BI_Vista_Autopartes_Precio_Promedio AS
+CREATE  VIEW UNIX.BI_Vista_Autopartes_Precio_Promedio AS
 SELECT 
   CAST((SELECT SUM(COMPRA_TOTAL) / SUM(CANTIDAD_TOTAL_COMPRADA) FROM UNIX.BI_HechoAutoparteCompra) AS DECIMAL(18,2))
   PRECIO_PROMEDIO_COMPRA,
@@ -512,7 +512,7 @@ GO
 
 ----------  Ganancias (precio de venta – precio de compra) x Sucursal x mes
 GO
-CREATE OR ALTER VIEW UNIX.BI_Vista_Autopartes_Ganancias AS
+CREATE VIEW UNIX.BI_Vista_Autopartes_Ganancias AS
 SELECT SUCURSAL_CODIGO, ANIO, MES, GANANCIAS
 FROM
   (
@@ -541,7 +541,7 @@ GO
 ----------  Máxima cantidad de stock por cada sucursal (anual)
 
 GO
-CREATE OR ALTER VIEW UNIX.BI_Vista_Autopartes_Stock_mensual_sucursal AS
+CREATE VIEW UNIX.BI_Vista_Autopartes_Stock_mensual_sucursal AS
 SELECT SUCURSAL_CODIGO, ANIO, MES, DIFF_STOCK_COMPRADO,
   CASE TIEMPO_CODIGO
     WHEN 1 THEN
@@ -576,7 +576,7 @@ GROUP BY SUCURSAL_CODIGO, TIEMPO_CODIGO, ANIO, MES, DIFF_STOCK_COMPRADO
 GO
 
 GO
-CREATE OR ALTER VIEW UNIX.BI_Vista_Autopartes_Stock_Max_Anual AS
+CREATE VIEW UNIX.BI_Vista_Autopartes_Stock_Max_Anual AS
 SELECT SUCURSAL_CODIGO, ANIO, MAX(STOCK_ACUMULADO) MAX_STOCK_ACUMULADO, MAX(DIFF_STOCK_COMPRADO) MAX_DIFF_STOCK_COMPRADO_UN_MES
 FROM UNIX.BI_Vista_Autopartes_Stock_mensual_sucursal
 GROUP BY SUCURSAL_CODIGO, ANIO

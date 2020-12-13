@@ -1,6 +1,9 @@
 SELECT * FROM UNIX.BI_HechoModelo
 SELECT * FROM UNIX.BI_HechoAutoparteCompra
 SELECT * FROM UNIX.BI_HechoAutoparteVenta
+SELECT * FROM UNIX.BI_HechoAutomovilCompra
+SELECT * FROM UNIX.BI_HechoAutomovilVenta
+
 
 SELECT * FROM UNIX.BI_Vista_Automoviles_Cantidad_Comprados_Vendidos
 SELECT * FROM UNIX.BI_Vista_Automoviles_Ganancias
